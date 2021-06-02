@@ -1,0 +1,4 @@
+"main.obj",
+"oled.obj" 
+TO "OLED" 
+RAMSIZE(256) 

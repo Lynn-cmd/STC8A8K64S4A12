@@ -1,0 +1,92 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              06/01/2021 23:46:40 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          //////////////////////////////////////////////////////////////////////////////////   
+   2          //              ËµÃ÷: //Æô¹âµç×Ó£ºÆô¹âÁé´´¿Æ¼¼ÓÐÏÞ¹«Ë¾ µçÉÌÆ½Ì¨ Qi-Sun
+   3          //              ----------------------------------------------------------------
+   4          //              GND    µçÔ´µØ
+   5          //              VCC  ½Ó5V»ò3.3vµçÔ´
+   6          //              D0   P2^7£¨SCL£©
+   7          //              D1   P2^6£¨SDA£©
+   8          //              RES  ½ÓP25
+   9          //              DC   ½ÓP24
+  10          //              CS   ½ÓP26  -----                       
+  11          //              ----------------------------------------------------------------
+  12          //******************************************************************************/
+  13          #include "stc8.h"
+  14          #include "oled.h"
+  15          
+  16           int main(void)
+  17           {  //u16 t;
+  18   1          //delay_init();        //ÑÓÊ±º¯Êý³õÊ¼»¯   
+  19   1        //  NVIC_Configuration();    //ÉèÖÃNVICÖÐ¶Ï·Ö×é2:2Î»ÇÀÕ¼ÓÅÏÈ¼¶£¬2Î»ÏìÓ¦ÓÅÏÈ¼¶   LED_Init();          //LED¶Ë¿Ú
+             -³õÊ¼»¯
+  20   1          OLED_Init();      //³õÊ¼»¯OLED  
+  21   1          OLED_Clear()    ; 
+  22   1      
+  23   1        while(1) 
+  24   1        {   
+  25   2          OLED_Clear();
+  26   2          OLED_ShowCHinese1(0,0,0);//
+  27   2          OLED_ShowCHinese1(18,0,1);
+  28   2          OLED_ShowCHinese1(36,0,2);
+  29   2          OLED_ShowCHinese1(54,0,3);
+  30   2          OLED_ShowString(71,0,","); 
+  31   2          OLED_ShowCHinese1(0,2,4);
+  32   2          OLED_ShowCHinese1(18,2,5);
+  33   2          OLED_ShowCHinese1(36,2,6);
+  34   2          OLED_ShowCHinese1(54,2,7);
+  35   2          OLED_ShowCHinese1(72,2,8);
+  36   2          //OLED_ShowCHinese1(0,17,4);
+  37   2      //    OLED_ShowCHinese1(72,0,4);
+  38   2      //    OLED_ShowCHinese1(90,0,5);
+  39   2          
+  40   2          OLED_ShowString(0,6,"Lynn 20210530");
+  41   2          //OLED_ShowString(0,2,"1.3' OLED TEST");
+  42   2          //OLED_ShowString(8,2,"STC8A");  
+  43   2      //    OLED_ShowString(0,4,"Qi-sun");  
+  44   2      //    OLED_ShowString(40,4,"123");  
+  45   2      //    OLED_ShowString(0,6,"STC8A,");  
+  46   2      //    OLED_ShowString(63,6,"CODE:");  
+  47   2      
+  48   2          while(1);
+  49   2      //    OLED_ShowChar(48,6,t);//ÏÔÊ¾ASCII×Ö·û    
+  50   2      //    t++;
+  51   2      //    if(t>'~')t=' ';
+  52   2      //    OLED_ShowNum(103,6,t,3,16);//ÏÔÊ¾ASCII×Ö·ûµÄÂëÖµ  
+  53   2            
+  54   2          
+C51 COMPILER V9.60.0.0   MAIN                                                              06/01/2021 23:46:40 PAGE 2   
+
+  55   2      //    delay_ms(500);
+  56   2      //    OLED_Clear();
+  57   2      //    delay_ms(500);
+  58   2      //    OLED_DrawBMP(0,0,128,8,BMP1);  //Í¼Æ¬ÏÔÊ¾(Í¼Æ¬ÏÔÊ¾É÷ÓÃ£¬Éú³ÉµÄ×Ö±í½Ï´ó£¬»áÕ¼ÓÃ½Ï¶à¿Õ¼ä£¬FLASH¿Õ¼ä8KÒÔÏ
+             -ÂÉ÷ÓÃ)
+  59   2      //    delay_ms(500);
+  60   2      //    OLED_DrawBMP(0,0,128,8,BMP2);
+  61   2      //    delay_ms(500);
+  62   2        }   
+  63   1        
+  64   1      }
+  65          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    116    ----
+   CONSTANT SIZE    =     16    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

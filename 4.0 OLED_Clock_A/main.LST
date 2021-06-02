@@ -1,0 +1,59 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              06/02/2021 15:09:32 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          //////////////////////////////////////////////////////////////////////////////////   
+   2          //        
+   3          //******************************************************************************/
+   4          #include "stc8.h"
+   5          #include "oled.h"
+   6          #include  "def.h"           //宏定义 常用函数
+*** WARNING C317 IN LINE 12 OF def.h: attempt to redefine macro 'u32'
+   7          #include  "delay.h"         //延时函数
+   8          #include  "ds1302.h"
+   9          
+  10          //真对 STC8A系列 IO口初始化
+  11          //除P3 P5口外 其他IO默认准双向IO口 所以当用的P3 P5口是要进行初始化一下   
+  12          void IO_init(void)
+  13          {
+  14   1        P3M0 = 0X00;
+  15   1        P3M1 = 0X00;
+  16   1        P5M0 = 0X00;
+  17   1        P5M1 = 0X00;
+  18   1      }
+  19          
+  20           int main(void)
+  21           {  
+  22   1          IO_init();    //IO口初始化
+  23   1          OLED_Init();  //初始化OLED  
+  24   1         // Init_SPI();    //SPI初始化
+  25   1          OLED_Clear(); 
+  26   1          //Set_RTC();  //DS1302时钟初始化   
+  27   1        while(1) 
+  28   1        {   
+  29   2          ds1302_scan(0,0,1);   //更新显示
+  30   2          delay_ms(200);
+  31   2          
+  32   2        }   
+  33   1        
+  34   1      }
+  35          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     37    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,69 @@
+C51 COMPILER V9.60.0.0   SPI                                                               06/02/2021 15:04:35 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE SPI
+OBJECT MODULE PLACED IN spi.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE spi.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          
+   2          #include "stc8.h"
+   3          #include  "spi.h"
+   4          //SPI初始化
+   5          //主要将SPI总线 从默认P1口上调制P4口  
+   6          //然后初始化SPI总线
+   7          void Init_SPI()        
+   8          {
+   9   1      //P4M0 &= 0xFD;         //配置 P4.1 MISO口 仅为输入功能
+  10   1      //P4M1 |= 0x02;
+  11   1      P_SW1=0X04;        //将 SPI 调整到 SS P22  MOSI P23  MISO P24  SCLK P25
+  12   1      SPDAT = 0;
+  13   1      SPSTAT=0xc0;             //SPDAT.7和SPDAT.6写11，可以将中断标志清零。注意是写1才清零
+  14   1      SPCTL = 0xd0;            //  SSIG 1 开启主机模式 SPEN 1 SPI使能  DORD 0 先发最高位   MSTR 1 主机模式
+  15   1                               //  CPOL 0  SPICLK空闲时为低  CPHA  0 数据在SPICLK的前时钟沿驱动  时钟CPU_CLK/4 
+  16   1      }
+  17          
+  18          //SPI为全双工通讯  所以在发送的同时可以接收到数据
+  19          u8 SPI_SendByte(u8 SPI_SendData)
+  20          {
+  21   1      SPDAT= SPI_SendData;     // 将数据 写入 
+  22   1          
+  23   1      while((SPSTAT&0x80)==0); //等待写入完成
+  24   1      SPSTAT = 0xc0;           //清除中断标志，和写冲突标志，注意是对应位写1才能清零   
+  25   1      return  SPDAT;           //返回得到的数据
+  26   1      }
+  27          
+  28           //SPI时钟速率设置
+  29          void SPI_Speed(u8 speed)
+  30          {
+  31   1      
+  32   1          switch(speed)         //每一次降速 都要先清为最高 在进行降速
+  33   1          {
+  34   2              case 0: SPCTL&=0xFC;break;                //SysClk/4,SPR1=0,SPR0=0 
+  35   2              case 1: SPCTL&=0xFC; SPCTL|=0x01;break;   //SysClk/16,SPR1=0,SPRO=1
+  36   2              case 2: SPCTL&=0xFC; SPCTL|=0x02;break;   //SysClk/64,SPR1=1,SPR0=0
+  37   2              case 3: SPCTL&=0xFC; SPCTL|=0x03;break;   //SysClk/128,SPR1=1,SPR0=1
+  38   2          }
+  39   1          
+  40   1      }
+  41          
+  42          
+  43          
+  44          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     66    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.60.0.0   SPI                                                               06/02/2021 15:04:35 PAGE 2   
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

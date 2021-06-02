@@ -1,0 +1,237 @@
+C51 COMPILER V9.60.0.0   DS1302                                                            06/02/2021 15:10:42 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DS1302
+OBJECT MODULE PLACED IN ds1302.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ds1302.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND TABS(
+                    -2)
+
+line level    source
+
+   1          
+   2          //DS1302部分
+   3          //整体 显示 时间 日期 年月 星期 
+   4          //可不停更新秒时间
+   5          //可进行触摸设置
+   6          #include "stc8.h" //包含头文件，一般情况不需要改动，头文件包含特殊功能寄存器的定义
+   7          #include "ds1302.h"
+   8          #include "intrins.h"
+   9          #include "delay.h"
+  10          #include "oled.h"
+*** WARNING C317 IN LINE 19 OF .\SRC\oled.h: attempt to redefine macro 'u32'
+  11          
+  12          code u8 write_rtc_address[7]={0x80,0x82,0x84,0x86,0x88,0x8a,0x8c}; //秒分时日月周年 最低位读写位
+  13          code u8 read_rtc_address[7]={0x81,0x83,0x85,0x87,0x89,0x8b,0x8d};  
+  14          
+  15          u8 ds1302tmp[7]={30,26,14,2,6,3,20};//秒分时日月周年
+  16          
+  17          
+  18          //写一个字节 
+  19          //temp 要写入的字节  （地址或数据）
+  20          void Write_Ds1302_Byte(u8 temp) 
+  21          {
+  22   1       u8 i;
+  23   1       for (i=0;i<8;i++)      //循环8次 写入数据
+  24   1        { 
+  25   2           SCK=0;
+  26   2           SDA=temp&0x01;     //每次传输低字节 
+  27   2           temp>>=1;      //右移一位
+  28   2         delay_us(40);
+  29   2           SCK=1;
+  30   2         }
+  31   1      }   
+  32          
+  33          //写入DS1302数据
+  34          //address 写入的地址
+  35          //dat     写入的数据
+  36          void Write_Ds1302( u8 address,u8 dat )     
+  37          {
+  38   1        CE=0;
+  39   1        _nop_();
+  40   1        delay_us(50);
+  41   1        SCK=0;
+  42   1        _nop_();
+  43   1        delay_us(50);
+  44   1        CE=1;           //启动
+  45   1          _nop_();        
+  46   1        delay_us(50);           
+  47   1        Write_Ds1302_Byte(address); //发送地址
+  48   1        Write_Ds1302_Byte(dat);   //发送数据
+  49   1        CE=0;                 //恢复
+  50   1      }
+  51          
+  52          //读出DS1302数据
+  53          //address 读取数据的地址
+C51 COMPILER V9.60.0.0   DS1302                                                            06/02/2021 15:10:42 PAGE 2   
+
+  54          //返回 读取的数据值
+  55          u8 Read_Ds1302 ( u8 address )
+  56          {
+  57   1        u8 i,temp=0x00;
+  58   1        CE=0;
+  59   1        _nop_();
+  60   1        _nop_();
+  61   1        delay_us(50);
+  62   1        SCK=0;
+  63   1        _nop_();
+  64   1        _nop_();
+  65   1        delay_us(50);
+  66   1        CE=1;
+  67   1        _nop_();
+  68   1        _nop_();
+  69   1        delay_us(50);
+  70   1      
+  71   1        Write_Ds1302_Byte(address);
+  72   1      
+  73   1        for (i=0;i<8;i++)     //循环8次 读取数据
+  74   1        {   
+  75   2          if(SDA)
+  76   2          temp|=0x80;     //每次传输低字节
+  77   2          SCK=0;
+  78   2          temp>>=1;     //右移一位
+  79   2          _nop_();
+  80   2          delay_us(50);
+  81   2           _nop_();
+  82   2           _nop_();
+  83   2          SCK=1;
+  84   2        } 
+  85   1      
+  86   1        CE=0;
+  87   1        _nop_();              //以下为DS1302复位的稳定时间
+  88   1        _nop_();
+  89   1        delay_us(50);
+  90   1        CE=0;
+  91   1        SCK=0;
+  92   1        _nop_();
+  93   1        _nop_();
+  94   1        _nop_();
+  95   1        _nop_();
+  96   1        delay_us(50);
+  97   1        SCK=1;
+  98   1        _nop_();
+  99   1        _nop_();
+ 100   1        delay_us(50);
+ 101   1        SDA=0;
+ 102   1        _nop_();
+ 103   1        _nop_();
+ 104   1      delay_us(50);
+ 105   1        SDA=1;
+ 106   1        _nop_();
+ 107   1        _nop_();  delay_us(50);
+ 108   1        return (temp);      //返回
+ 109   1      }
+ 110          
+ 111          
+ 112          //写入时 DCB转换  
+ 113          //DS1302 只接收 DCB码 即高4位放10位值 低4位放个位值
+ 114          //add 要转换的地址
+ 115          //返回 转换后的数据
+C51 COMPILER V9.60.0.0   DS1302                                                            06/02/2021 15:10:42 PAGE 3   
+
+ 116          u8 dcb_read(u8 add)
+ 117          {
+ 118   1        u8 fla,fla2;
+ 119   1        fla=Read_Ds1302(add);
+ 120   1        fla2=((fla/16)*10)+(fla&0x0f);
+ 121   1        return fla2;  
+ 122   1      }
+ 123          
+ 124          
+ 125          //设定时钟数据
+ 126          //主要设置时钟芯片里的 秒分时日月周年
+ 127          void Set_RTC(void)           //设定 日历
+ 128          {
+ 129   1        u8 i;
+ 130   1      
+ 131   1        for(i=0;i<7;i++)         //BCD处理
+ 132   1         ds1302tmp[i]=ds1302tmp[i]/10*16+ds1302tmp[i]%10;
+ 133   1         
+ 134   1        Write_Ds1302(0x8E,0X00);   //写使能
+ 135   1            
+ 136   1        for(i=0;i<7;i++)       //7次写入 秒分时日月周年
+ 137   1        Write_Ds1302(write_rtc_address[i],ds1302tmp[i]);
+ 138   1        
+ 139   1          Write_Ds1302(0x8E,0x80);   //写禁止
+ 140   1      
+ 141   1      }
+ 142          
+ 143          
+ 144          //DS1302  时间 年月日 星期 整体显示函数
+ 145          //支持只显示时间 功能
+ 146          //此函数需要循环 进行更新 不能自动更新
+ 147          //x y  显示的时间的初始坐标  星期在其上面显示  年月日 在星期上面显示
+ 148          //如
+ 149          //2013-12-12
+ 150          //Friday
+ 151          //20:25:32
+ 152          //dcolor 字体颜色   bgcolor  背景颜色
+ 153          //mode  为1时 支持 年月日 星期显示  其它 只显示时间
+ 154          void ds1302_scan(u8 x,u16 y,u8 mode)
+ 155          {
+ 156   1          u8 i; 
+ 157   1          OLED_ShowString(x+16,y,":");//显示秒 分 时 之间的 “：”  
+ 158   1          OLED_ShowString(x+40,y,":");
+ 159   1          for(i=0;i<3;i++)              //显示Display 秒  分  时
+ 160   1           number10(x+24*i,y,dcb_read(0x85-i*2));
+ 161   1        
+ 162   1                   
+ 163   1        if(mode==1)    //判断 是否开启 日期 年月显示 mode为1表示开启
+ 164   1         {         
+ 165   2          switch(dcb_read(0x8b))            //星期
+ 166   2          {
+ 167   3           case 7:
+ 168   3              OLED_ShowString(x,y+2,"Sunday");
+ 169   3              break;
+ 170   3           case 1:
+ 171   3              OLED_ShowString(x,y+2,"Monday");
+ 172   3              break;
+ 173   3           case 2:
+ 174   3                OLED_ShowString(x,y+2,"Tuesday");
+ 175   3              break;
+ 176   3           case 3:
+ 177   3                OLED_ShowString(x,y+2,"Wednesday");
+C51 COMPILER V9.60.0.0   DS1302                                                            06/02/2021 15:10:42 PAGE 4   
+
+ 178   3              break;
+ 179   3           case 4:
+ 180   3                OLED_ShowString(x,y+2,"Thursday");
+ 181   3              break;
+ 182   3           case 5:
+ 183   3                OLED_ShowString(x,y+2,"Friday");
+ 184   3              break;
+ 185   3           case 6:
+ 186   3                OLED_ShowString(x,y+2,"Saturday");
+ 187   3              break;
+ 188   3          }
+ 189   2          
+ 190   2              OLED_ShowString(x,y+4,"20"); //显示日 月 年 之间的 “-”
+ 191   2              OLED_ShowString(x+32,y+4,"-");
+ 192   2              OLED_ShowString(x+56,y+4,"-");
+ 193   2      
+ 194   2           number10(x+16,y+4,dcb_read(0x8d));    //年
+ 195   2           number10(x+16+24,y+4,dcb_read(0x89));   //月
+ 196   2           number10(x+16+48,y+4,dcb_read(0x87));   //日                             
+ 197   2         }
+ 198   1      }
+ 199          
+ 200          
+ 201          //只显示10位数据
+ 202          void number10(u8 x,u16 y,u16 dat) //坐标 要显示的数据  
+ 203          { 
+ 204   1        OLED_ShowChar(x,y,dat/10%10+'0');
+ 205   1        OLED_ShowChar(x+8,y,dat%10+'0');
+ 206   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    774    ----
+   CONSTANT SIZE    =     78    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      7      18
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

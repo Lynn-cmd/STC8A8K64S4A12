@@ -1,0 +1,173 @@
+C51 COMPILER V9.60.0.0   XPT2046                                                           06/02/2021 15:02:16 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE XPT2046
+OBJECT MODULE PLACED IN xpt2046.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE xpt2046.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND TABS
+                    -(2)
+
+line level    source
+
+   1          
+   2           
+   3          #include "stc8.h"
+   4          #include "math.h"
+   5          #include "xpt2046.h"
+   6          #include "delay.h"
+   7          #include "spi.h"
+   8          #include "gui.h"
+   9          #include "tft.h"
+  10          
+  11          
+  12          u8 i2t[8];         //读24c02中 触摸校准参数 临时转换调用数组
+  13          
+  14          
+  15          //触摸屏校准参数
+  16          //如果没有校准到24C里  使用默认值
+  17          struct T_i T_i2c=
+  18          {
+  19           678,  //比例因子 的值要除以10000才是真实值  因为为了方便函数处理 计算时乘以10000      
+  20           920,  //比例因子 的值要除以10000才是真实值  因为为了方便函数处理 计算时乘以10000 
+  21           -19,
+  22           -20,
+  23          };
+  24          
+  25          
+  26          
+  27          
+  28          
+  29          //SPI总线法 读取XPT2046数据
+  30          //采集触摸时xpt输出的物理坐标 x y  
+  31          //此函数没有转换成LCD的实际坐标 
+  32          //为校准函数做读取
+  33          //返回 xpt2046ad.x  物理x坐标
+  34          //     xpt2046ad.y  物理y坐标
+  35          //     xpt2046ad.flag 采集成功标志
+  36          struct TFT_Pointer xpt2046ad()                                     
+  37          {
+  38   1       struct TFT_Pointer result;
+  39   1       u8   ax[8];
+  40   1       u16 x1,y1;
+  41   1       u16 x2,y2;
+  42   1      
+  43   1       result.x=0;
+  44   1       result.y=0;
+  45   1       result.flag=0;
+  46   1       
+  47   1      #define ERR_RANGE 5 //误差范围 
+  48   1        
+  49   1       if(AD7843_isClick==0)
+  50   1       {   
+  51   2        delay_ms(1);
+  52   2        if(AD7843_isClick==0)
+  53   2        {
+  54   3        LCD_CS=1;     //xpt的片选线在tft上 防止触摸工作时影响tft  这里关掉TFT使能
+C51 COMPILER V9.60.0.0   XPT2046                                                           06/02/2021 15:02:16 PAGE 2   
+
+  55   3          AD7843_CS=0;    //开片选
+  56   3        SPI_Speed(2);   //降低 SPI通讯速度 使触摸芯片放回数据更稳定
+  57   3         
+  58   3         /*这里采用16时钟周期采集  因为 此触摸功能采用的是SPI总线
+  59   3           而SPI功能是只能8位传输  XPT2046的AD分辨率为12位  
+  60   3         这样8位的SPI接收是不行的
+  61   3         所以 根据XPT2046手册中 16时钟周期 时序图 可以看出
+  62   3         发送采集数据  接收一次SPI数据后 在发送空功能的SPI数据  就会把剩下的部分接收到
+  63   3         这样先接收的 是低字节数据  第二次接收的是高字节数据  移位后 便是12位的AD值   
+  64   3         */
+  65   3         ax[0]=SPI_SendByte(0x90);  //送控制字10010000即用差分方式读X坐标，舍弃读取的数据
+  66   3         ax[0]=SPI_SendByte(0x00);  //发送任意数据（最高位不能为1，和2046命令冲突），接收X高字节
+  67   3         ax[1]=SPI_SendByte(0xD0);  //送控制字11010000即用差分方式读Y坐标，接收X低字节
+  68   3         ax[2]=SPI_SendByte(0x00);  //发送任意数据（同上），接收Y高字节
+  69   3         ax[3]=SPI_SendByte(0x90);  //送控制字10010000 （第二次）读X坐标，接收Y低字节
+  70   3         ax[4]=SPI_SendByte(0x00);  //发送任意数据（同上），接收X高字节
+  71   3         ax[5]=SPI_SendByte(0xD0);  //送控制字11010000  （第二次）读Y坐标，接收X低字节
+  72   3         ax[6]=SPI_SendByte(0x00);  //发送任意数据（同上)，接收Y高字节
+  73   3         ax[7]=SPI_SendByte(0x90);  //送控制字10010000  （第三次）读X坐标，接收Y低字节
+  74   3      
+  75   3                      //提取两次采集值
+  76   3         y1=(ax[0]<<5)|(ax[1]>>3);
+  77   3         y2=(ax[4]<<5)|(ax[5]>>3);
+  78   3         x1=(ax[2]<<5)|(ax[3]>>3);
+  79   3         x2=(ax[6]<<5)|(ax[7]>>3);
+  80   3      
+  81   3      if(((x2<=x1&&x1<x2+ERR_RANGE)||(x1<=x2&&x2<x1+ERR_RANGE))//前后两次采样在+-ERR_RANGE内
+  82   3          &&((y2<=y1&&y1<y2+ERR_RANGE)||(y1<=y2&&y2<y1+ERR_RANGE)))
+  83   3         {
+  84   4          result.flag=1;      //打开标志位
+  85   4        result.x=(x1+x2)/2;
+  86   4        result.y=(y1+y2)/2;
+  87   4         }
+  88   3         else result.flag=0;
+  89   3      
+  90   3         SPI_Speed(0);    //调整SPI速度为最高
+  91   3         AD7843_CS=1;     //关片选
+  92   3         LCD_CS=0;
+  93   3         
+  94   3        }
+  95   2       } 
+  96   1      
+  97   1       return result;
+  98   1      }
+  99          
+ 100          
+ 101          
+ 102          
+ 103          //触摸数据转换屏实际坐标函数体
+ 104          //返回 result.x坐标 result.y坐标 
+ 105          struct TFT_Pointer TFT_Cm()                                     
+ 106          {
+ 107   1       u16 a,b;       //临时变量
+ 108   1       struct TFT_Pointer result;
+ 109   1      
+ 110   1       result=xpt2046ad();   //读取AD值
+ 111   1      
+ 112   1      //触摸板X Y
+ 113   1         a=result.x;
+ 114   1         b=result.y;
+ 115   1      /* 触摸屏计算公式
+ 116   1         lcdx=xa*tpx+xb;
+C51 COMPILER V9.60.0.0   XPT2046                                                           06/02/2021 15:02:16 PAGE 3   
+
+ 117   1         lcdy=ya*tpy+yb;
+ 118   1         lcdx,lcdy为屏坐标  tpx,tpy为触屏板值 xa,ya为比例因子  xb,yb为偏移量
+ 119   1      
+ 120   1         计算方法 
+ 121   1         在屏幕上指定lcdx,lcdy位置画出十字图形 分别画在屏幕上的4个角位置
+ 122   1         用触摸笔分别点击 得到其中的触摸值
+ 123   1         根据上面的公式 计算  xa,ya  xb,yb  这样就能使得触摸板和屏幕校准
+ 124   1        */
+ 125   1           //无校准功能  
+ 126   1      //     result.x=0.065894*a-16;      //将得到的AD值带入公式 计算lcd屏的x y坐标 
+ 127   1      //     result.y=0.084031*b-14;
+ 128   1          //加校准功能  
+ 129   1           result.x=((float)T_i2c.xi/10000)*a+T_i2c.a;      //将得到的AD值带入公式 计算lcd屏的x y坐标 
+ 130   1           result.y=((float)T_i2c.yi/10000)*b+T_i2c.b;
+ 131   1       return result;               //返回坐标值
+ 132   1      }
+ 133          
+ 134          
+ 135          
+ 136          
+ 137          
+ 138          
+ 139          
+ 140          
+ 141          
+ 142          
+ 143          
+ 144          
+ 145          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    535    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     16      26
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

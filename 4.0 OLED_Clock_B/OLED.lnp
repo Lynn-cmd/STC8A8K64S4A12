@@ -1,0 +1,6 @@
+"main.obj",
+"oled.obj",
+"delay.obj",
+"ds1302.obj" 
+TO "OLED" Rtx51Tiny 
+RAMSIZE(256) 

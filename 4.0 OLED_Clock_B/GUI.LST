@@ -1,0 +1,126 @@
+C51 COMPILER V9.60.0.0   GUI                                                               06/02/2021 14:56:54 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE GUI
+OBJECT MODULE PLACED IN GUI.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE GUI.C LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\SRC) DEBUG OBJECTEXTEND TA
+                    -BS(2)
+
+line level    source
+
+   1          
+   2          #include  "stc8.h"
+   3          #include  "gui.h"
+   4          #include  "tft.h"
+   5          #include  "delay.h" 
+   6          #include  "zifu8x16.h"      
+   7          #include  "hz16x16.h"     //汉字16X16
+   8          #include "oled.h"
+*** WARNING C317 IN LINE 19 OF .\SRC\oled.h: attempt to redefine macro 'u32'
+   9          ////显示汉字及字符  横向显示
+  10          ////x1 y1 显示的初始位置
+  11          ////*str 要显示的数据
+  12          ////dcolor 显示汉字 字符的颜色
+  13          ////bgcolor 显示汉字 字符的背景颜色  不支持背景屏幕自有色
+  14          void GUI_sprintf_hzstr16h(u8 x1,u16 y1,u8 *str,u16 dcolor,u16 bgcolor)    
+  15          {  
+  16   1         u8 l=0;
+  17   1        while(*str)
+  18   1        { 
+  19   2          if(*str<0x80)     //小于128   ascii 都在数组内
+  20   2          {   
+  21   3          GUI_sprintf_char(x1,y1+l*8,*str,dcolor,bgcolor,1);
+  22   3          l+=1;
+  23   3          str++;
+  24   3          }
+  25   2          else
+  26   2          {   
+  27   3           //GUI_sprintf_hz1616(x1,y1+l*8,(u8*)str,dcolor, bgcolor,1);
+  28   3            str+=2;l+=2;
+  29   3          }
+  30   2        } 
+  31   1      }
+  32          
+  33          
+  34          //显示汉字字符串 纵向显示
+  35          //x1 y1 显示的初始位置
+  36          //*str 要显示的数据
+  37          //dcolor 显示字符的颜色
+  38          //bgcolor 显示字符的背景颜色  
+  39          void GUI_sprintf_hzstr16x(u8 x1,u16 y1,u8 *str,u16 dcolor,u16 bgcolor)    
+  40          {  
+  41   1         u8 l=0;
+  42   1        while(*str)
+  43   1        { 
+  44   2          if(*str<0x80)     //小于128   ascii 都在数组内
+  45   2          {   
+  46   3          GUI_sprintf_char(x1+l*8,y1,*str,dcolor,bgcolor,0);
+  47   3          l+=1;
+  48   3          str++;
+  49   3          }
+  50   2          else
+  51   2          {   
+  52   3           //GUI_sprintf_hz1616(x1+l*8,y1,(u8*)str,dcolor, bgcolor,0);
+  53   3            str+=2;l+=2;
+C51 COMPILER V9.60.0.0   GUI                                                               06/02/2021 14:56:54 PAGE 2   
+
+  54   3          }
+  55   2        } 
+  56   1      }
+  57          
+  58          
+  59          //显示英文或数字字符
+  60          //函数支持 字符的纵向和横向显示 （要配合扫描方式）
+  61          //x  y  要显示字符的初始坐标
+  62          //value 显示字符数据
+  63          //dcolor 显示的字符颜色  bgcolor显示字符的背景颜色
+  64          //mode   0 字符纵向显示  1 字符横向显示
+  65          void GUI_sprintf_char(u8 x,u16 y,u8 value,u16 dcolor,u16 bgcolor,u8 mode) 
+  66          {  
+  67   1        u8 i,j;
+  68   1        u8 *temp=zifu816;    //temp是*temp的地址  这里temp就是zifu的首地址 
+  69   1                            
+  70   1        temp+=(value-32)*16;   //确定要显示的值
+  71   1                         //用ascii表  前32个ascii没有存入zifu库里 所以要减32
+  72   1                               //每个字符用16个字节显示 所以在乘以16  就是对应的显示位的首地址
+  73   1      
+  74   1          if(mode==0)Address_set(x,y,x+7,y+15);    //设置区域      
+  75   1          if(mode==1)Address_set(x,y,x+7,y+15); //设置区域          
+  76   1          for(j=0;j<16;j++)
+  77   1          {
+  78   2            for(i=0;i<8;i++)        //先横扫
+  79   2            {          
+  80   3              if((*temp&(1<<(7-i)))!=0)      //将1 左移 然后对应位进行相与        
+  81   3                Lcd_Write_Data(dcolor);      //显示字符颜色
+  82   3               
+  83   3              else        
+  84   3                Lcd_Write_Data(bgcolor);       //显示背景颜色   
+  85   3            }
+  86   2            temp++;                  //下一字节
+  87   2           }
+  88   1      
+  89   1      
+  90   1      }
+  91          
+  92          ////只显示10位数据
+  93          //void number10(u8 x,u16 y,u16 dat) //坐标 要显示的数据  
+  94          //{ 
+  95          //  OLED_ShowChar(x,y,dat/10%10+'0');
+  96          //  OLED_ShowChar(x+8,y,dat%10+'0');
+  97          //}
+  98          
+  99            
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    617    ----
+   CONSTANT SIZE    =   2080    ----
+   XDATA SIZE       =   ----      36
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
